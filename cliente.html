@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Cliente — Soma Partners</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#0b1e30;--navy2:#0d2035;--navy3:#0f2540;
+  --white:#fff;--border:rgba(255,255,255,0.09);
+  --indigo:#4f46e5;--green:#10b981;--orange:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+  --muted:rgba(255,255,255,0.45);--muted2:rgba(255,255,255,0.25);
+}
+html,body{min-height:100vh;background:var(--navy);font-family:'Montserrat',sans-serif;color:var(--white);overflow-x:hidden}
+
+/* ── NAV ── */
+.topnav{position:sticky;top:0;z-index:100;background:rgba(11,30,48,0.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:13px;cursor:pointer;text-decoration:none}
+.logo-soma{font-size:17px;font-weight:300;color:#fff;letter-spacing:0.5px}
+.logo-pipe{width:1px;height:20px;background:rgba(255,255,255,0.4)}
+.logo-partners{font-size:10px;font-weight:700;letter-spacing:5px;color:#fff;text-transform:uppercase}
+.nav-center{font-size:13px;font-weight:600;color:var(--muted)}
+.nav-right{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;border:none;transition:all 0.18s;letter-spacing:0.3px}
+.btn svg{width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;flex-shrink:0}
+.btn-primary{background:var(--indigo);color:#fff}.btn-primary:hover{background:#4338ca}
+.btn-outline{background:transparent;color:#fff;border:1px solid var(--border)}.btn-outline:hover{background:rgba(255,255,255,0.08)}
+.btn-danger{background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3)}.btn-danger:hover{background:rgba(239,68,68,0.25)}
+
+/* ── HERO ── */
+.hero{position:relative;height:200px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(11,30,48,0.97) 40%,rgba(11,30,48,0.6) 100%)}
+.hero-content{position:absolute;inset:0;display:flex;align-items:center;padding:0 40px;gap:24px}
+.hero-avatar{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,0.2)}
+.hero-info{}
+.hero-name{font-size:clamp(24px,3vw,36px);font-weight:900;letter-spacing:1px;line-height:1.1}
+.hero-sub{font-size:12px;color:var(--muted);margin-top:6px;display:flex;gap:16px;flex-wrap:wrap}
+.hero-sub span{display:flex;align-items:center;gap:5px}
+.hero-sub svg{width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none}
+.hero-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-top:10px}
+.hb-ativo{background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#6ee7b7}
+.hb-inativo{background:rgba(148,163,184,0.15);border:1px solid rgba(148,163,184,0.3);color:#94a3b8}
+
+/* ── DASHBOARD GRID ── */
+.dash{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:1px;background:var(--border);min-height:calc(100vh - 260px)}
+.dash-cell{background:var(--navy);padding:32px 36px}
+.dash-cell.full{grid-column:1/-1}
+.section-title{font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--muted2);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.section-title button{font-size:10px;font-weight:700;background:rgba(79,70,229,0.15);border:1px solid rgba(79,70,229,0.3);color:#a5b4fc;border-radius:6px;padding:3px 10px;cursor:pointer;font-family:'Montserrat',sans-serif;letter-spacing:0.5px;transition:all 0.18s}
+.section-title button:hover{background:rgba(79,70,229,0.3)}
+
+/* ── DADOS ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
+.info-item label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);display:block;margin-bottom:5px}
+.info-item p{font-size:14px;font-weight:500;color:var(--white);line-height:1.4}
+.info-item p.empty{color:var(--muted2);font-style:italic;font-weight:400}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.family-member{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.family-member:last-child{border-bottom:none}
+.fm-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.fm-name{font-size:13px;font-weight:600}
+.fm-rel{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ── PAGAMENTOS CHART ── */
+.chart-wrap{display:flex;align-items:center;gap:32px;margin-bottom:20px}
+.chart-canvas-wrap{width:140px;height:140px;flex-shrink:0;position:relative}
+.chart-legend{flex:1}
+.legend-item{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-label{font-size:12px;font-weight:600}
+.legend-val{margin-left:auto;font-size:12px;font-weight:700}
+.pgt-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
+.pgt-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px}
+.pgt-desc{flex:1;font-size:12px;font-weight:600}
+.pgt-val{font-size:12px;font-weight:700}
+.pgt-date{font-size:10px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.b-pago{background:rgba(16,185,129,0.2);color:#6ee7b7}
+.b-pendente{background:rgba(245,158,11,0.2);color:#fcd34d}
+.b-atrasado{background:rgba(239,68,68,0.18);color:#fca5a5}
+
+/* ── TAREFAS ── */
+.task-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.task-item:last-child{border-bottom:none}
+.task-check{width:18px;height:18px;border-radius:5px;border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.18s}
+.task-check.done{background:var(--green);border-color:var(--green)}
+.task-check svg{width:10px;height:10px;stroke:#fff;stroke-width:3;fill:none}
+.task-title{flex:1;font-size:13px;font-weight:500}
+.task-title.done{text-decoration:line-through;color:var(--muted)}
+.prio{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px}
+.prio-alta{background:rgba(239,68,68,0.15);color:#fca5a5}
+.prio-media{background:rgba(245,158,11,0.15);color:#fcd34d}
+.prio-baixa{background:rgba(16,185,129,0.15);color:#6ee7b7}
+
+/* ── TIMELINE ── */
+.timeline{display:flex;flex-direction:column;gap:0;max-height:260px;overflow-y:auto}
+.tl-item{display:flex;gap:12px;padding-bottom:16px;position:relative}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:15px;top:30px;bottom:0;width:1px;background:var(--border)}
+.tl-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;z-index:1}
+.tl-dot svg{width:13px;height:13px;stroke-width:2;fill:none}
+.tld-ligacao{background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.3)}.tld-ligacao svg{stroke:#93c5fd}
+.tld-reuniao{background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.3)}.tld-reuniao svg{stroke:#6ee7b7}
+.tld-email{background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.3)}.tld-email svg{stroke:#fcd34d}
+.tld-outro{background:rgba(139,92,246,0.2);border:1px solid rgba(139,92,246,0.3)}.tld-outro svg{stroke:#c4b5fd}
+.tl-content{flex:1;padding-top:4px}
+.tl-header{display:flex;align-items:baseline;gap:8px;margin-bottom:3px}
+.tl-action{font-size:12px;font-weight:700}
+.tl-date{font-size:10px;color:var(--muted)}
+.tl-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.tl-res{font-size:11px;color:var(--green);margin-top:2px;font-weight:500}
+
+/* ── LEMBRETES ── */
+.lem-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:6px}
+.lem-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lem-icon svg{width:14px;height:14px;stroke-width:2;fill:none}
+.li-alta{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.25)}.li-alta svg{stroke:#fca5a5}
+.li-media{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.25)}.li-media svg{stroke:#fcd34d}
+.li-baixa{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.25)}.li-baixa svg{stroke:#6ee7b7}
+.lem-title{font-size:12px;font-weight:700;margin-bottom:2px}
+.lem-date{font-size:10px;color:var(--muted)}
+.lem-overdue{color:#fca5a5;font-weight:700}
+
+/* ── MODALS ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-dark{background:#0d2236;border:1px solid var(--border);border-radius:14px;width:520px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 30px 60px rgba(0,0,0,0.5)}
+.mh{padding:22px 26px 0;display:flex;align-items:center;justify-content:space-between}
+.mt{font-size:15px;font-weight:700}
+.mc{background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;padding:4px}
+.mc svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+.mb{padding:18px 26px}
+.mf{padding:0 26px 22px;display:flex;gap:8px;justify-content:flex-end}
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.8px}
+.fc{width:100%;padding:9px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'Montserrat',sans-serif;color:#fff;outline:none;transition:border 0.18s}
+.fc:focus{border-color:var(--indigo)}
+.fc::placeholder{color:var(--muted2)}
+.fc option{background:#0f172a}
+textarea.fc{resize:vertical;min-height:70px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* TOAST/LOADER */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:#1e293b;color:#fff;padding:11px 18px;border-radius:9px;font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;opacity:0;transition:all 0.3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:#7f1d1d}.toast.ok{background:#065f46}
+.loader-wrap{position:fixed;inset:0;background:rgba(11,30,48,0.75);display:none;align-items:center;justify-content:center;z-index:5000}
+.loader-spin{width:38px;height:38px;border:3px solid rgba(255,255,255,0.1);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-msg{color:var(--muted2);font-size:12px;padding:12px 0;font-style:italic}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <a class="nav-logo" href="soma-partners.html">
+    <span class="logo-soma">Soma</span><div class="logo-pipe"></div><span class="logo-partners">Partners</span>
+  </a>
+  <div class="nav-center" id="nav-breadcrumb">Concierge</div>
+  <div class="nav-right">
+    <button class="btn btn-outline" onclick="window.location.href='concierge.html'">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Clientes
+    </button>
+    <button class="btn btn-outline" onclick="editCliente()">
+      <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Editar
+    </button>
+    <button class="btn btn-danger" onclick="confirmDelete()">
+      <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      Excluir
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="hero-bg" id="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-avatar" id="hero-avatar"></div>
+    <div class="hero-info">
+      <div class="hero-name" id="hero-name">Carregando...</div>
+      <div class="hero-sub" id="hero-sub"></div>
+      <div id="hero-badge"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD GRID -->
+<div class="dash">
+
+  <!-- DADOS DA FAMÍLIA -->
+  <div class="dash-cell">
+    <div class="section-title">
+      Dados da Família
+      <button onclick="editCliente()">Editar</button>
+    </div>
+    <div class="info-grid" id="info-grid"></div>
+    <div class="divider" id="family-divider" style="display:none"></div>
+    <div id="family-members"></div>
+  </div>
+
+  <!-- PAGAMENTOS -->
+  <div class="dash-cell" style="background:var(--navy2)">
+    <div class="section-title">
+      Pagamentos
+      <button onclick="openModal('modal-pgto')">+ Novo</button>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-canvas-wrap"><canvas id="pgt-chart"></canvas></div>
+      <div class="chart-legend" id="chart-legend"></div>
+    </div>
+    <div class="pgt-list" id="pgt-list"></div>
+  </div>
+
+  <!-- TAREFAS -->
+  <div class="dash-cell" style="background:var(--navy3)">
+    <div class="section-title">
+      Tarefas
+      <button onclick="openModal('modal-tarefa')">+ Nova</button>
+    </div>
+    <div id="task-list"></div>
+  </div>
+
+  <!-- CALENDÁRIO / LEMBRETES -->
+  <div class="dash-cell">
+    <div class="section-title">
+      Lembretes & Calendário
+      <button onclick="openModal('modal-lembrete')">+ Novo</button>
+    </div>
+    <div id="lem-list"></div>
+  </div>
+
+  <!-- PASSADOS (Interações) -->
+  <div class="dash-cell" style="background:var(--navy2)">
+    <div class="section-title">
+      Histórico — Passados
+      <button onclick="openModal('modal-interacao')">+ Registrar</button>
+    </div>
+    <div class="timeline" id="timeline-past"></div>
+  </div>
+
+  <!-- FUTUROS -->
+  <div class="dash-cell" style="background:var(--navy3)">
+    <div class="section-title">Próximas Ações — Futuros</div>
+    <div id="futuros-list"></div>
+  </div>
+
+</div>
+
+<!-- MODAL EDITAR CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal-dark">
+    <div class="mh"><div class="mt">Editar Cliente</div><button class="mc" onclick="closeModal('modal-cliente')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mb">
+      <div class="fr"><div class="fg"><label class="fl">Nome *</label><input class="fc" id="e-nome" placeholder="Nome completo"></div>
+      <div class="fg"><label class="fl">E-mail</label><input class="fc" id="e-email" type="email" placeholder="email@email.com"></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Telefone</label><input class="fc" id="e-telefone" placeholder="(11) 99999-9999"></div>
+      <div class="fg"><label class="fl">CPF</label><input class="fc" id="e-cpf" placeholder="000.000.000-00"></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Nascimento</label><input class="fc" id="e-nasc" type="date"></div>
+      <div class="fg"><label class="fl">Status</label><select class="fc" id="e-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select></div></div>
+      <div class="fg"><label class="fl">Foto (URL)</label><input class="fc" id="e-foto" placeholder="https://..."></div>
+      <div class="fg"><label class="fl">Endereço</label><input class="fc" id="e-end" placeholder="Rua, número, cidade"></div>
+      <div class="fg"><label class="fl">Cônjuge</label><input class="fc" id="e-conjuge" placeholder="Nome do cônjuge"></div>
+      <div class="fg"><label class="fl">Filhos</label><input class="fc" id="e-filhos" placeholder="Ex: Pedro (12), Ana (8)"></div>
+      <div class="fg"><label class="fl">Patrimônio estimado</label><input class="fc" id="e-patrimonio" placeholder="R$ 2.000.000"></div>
+      <div class="fg"><label class="fl">Observações</label><textarea class="fc" id="e-obs" rows="2"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeModal('modal-cliente')">Cancelar</button><button class="btn btn-primary" onclick="saveCliente()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL PAGAMENTO -->
+<div class="modal-overlay" id="modal-pgto">
+  <div class="modal-dark">
+    <div class="mh"><div class="mt" id="mt-pgto">Novo Pagamento</div><button class="mc" onclick="closeModal('modal-pgto')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mb">
+      <input type="hidden" id="pgto-id">
+      <div class="fr"><div class="fg"><label class="fl">Descrição *</label><input class="fc" id="pgto-desc" placeholder="Ex: Mensalidade"></div>
+      <div class="fg"><label class="fl">Valor (R$) *</label><input class="fc" id="pgto-val" type="number" step="0.01"></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Vencimento *</label><input class="fc" id="pgto-venc" type="date"></div>
+      <div class="fg"><label class="fl">Status</label><select class="fc" id="pgto-status"><option value="pendente">Pendente</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option></select></div></div>
+      <div class="fg"><label class="fl">Observações</label><textarea class="fc" id="pgto-obs" rows="2"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeModal('modal-pgto')">Cancelar</button><button class="btn btn-primary" onclick="savePgto()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL TAREFA -->
+<div class="modal-overlay" id="modal-tarefa">
+  <div class="modal-dark">
+    <div class="mh"><div class="mt" id="mt-tarefa">Nova Tarefa</div><button class="mc" onclick="closeModal('modal-tarefa')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mb">
+      <input type="hidden" id="tar-id">
+      <div class="fg"><label class="fl">Título *</label><input class="fc" id="tar-titulo" placeholder="Descreva a tarefa"></div>
+      <div class="fr"><div class="fg"><label class="fl">Prioridade</label><select class="fc" id="tar-prio"><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select></div>
+      <div class="fg"><label class="fl">Prazo</label><input class="fc" id="tar-prazo" type="date"></div></div>
+      <div class="fg"><label class="fl">Responsável</label><input class="fc" id="tar-resp" placeholder="Nome"></div>
+    </div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeModal('modal-tarefa')">Cancelar</button><button class="btn btn-primary" onclick="saveTarefa()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL LEMBRETE -->
+<div class="modal-overlay" id="modal-lembrete">
+  <div class="modal-dark">
+    <div class="mh"><div class="mt">Novo Lembrete</div><button class="mc" onclick="closeModal('modal-lembrete')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Título *</label><input class="fc" id="lem-titulo" placeholder="Ex: Ligar para confirmar reunião"></div>
+      <div class="fr"><div class="fg"><label class="fl">Data *</label><input class="fc" id="lem-data" type="date"></div>
+      <div class="fg"><label class="fl">Prioridade</label><select class="fc" id="lem-prio"><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option></select></div></div>
+      <div class="fg"><label class="fl">Observações</label><textarea class="fc" id="lem-obs" rows="2"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeModal('modal-lembrete')">Cancelar</button><button class="btn btn-primary" onclick="saveLembrete()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL INTERAÇÃO -->
+<div class="modal-overlay" id="modal-interacao">
+  <div class="modal-dark">
+    <div class="mh"><div class="mt">Registrar Interação</div><button class="mc" onclick="closeModal('modal-interacao')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mb">
+      <div class="fr"><div class="fg"><label class="fl">Tipo</label><select class="fc" id="int-tipo"><option value="ligacao">Ligação</option><option value="reuniao">Reunião</option><option value="email">E-mail</option><option value="whatsapp">WhatsApp</option><option value="outro">Outro</option></select></div>
+      <div class="fg"><label class="fl">Data *</label><input class="fc" id="int-data" type="date"></div></div>
+      <div class="fg"><label class="fl">Descrição *</label><textarea class="fc" id="int-desc" rows="3" placeholder="O que foi discutido?"></textarea></div>
+      <div class="fg"><label class="fl">Resolução / próximo passo</label><input class="fc" id="int-res" placeholder="O que ficou definido?"></div>
+    </div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeModal('modal-interacao')">Cancelar</button><button class="btn btn-primary" onclick="saveInteracao()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR DELETE -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal-dark" style="width:400px">
+    <div class="mh"><div class="mt">Excluir cliente</div><button class="mc" onclick="closeModal('modal-confirm')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mb"><p style="font-size:13px;color:var(--muted);line-height:1.6">Tem certeza? Todos os dados deste cliente serão excluídos permanentemente.</p></div>
+    <div class="mf"><button class="btn btn-outline" onclick="closeModal('modal-confirm')">Cancelar</button><button class="btn btn-danger" onclick="doDelete()">Excluir</button></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="loader-wrap" class="loader-wrap"><div class="loader-spin"></div></div>
+
+<script>
+const _sb=supabase.createClient('https://fqdhaaslmiprvifttmpb.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxZGhhYXNsbWlwcnZpZnR0bXBiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDkxNTcsImV4cCI6MjA5MzQ4NTE1N30.iJouT1ztgAnmxpowiWFusoaMbIIZYWathTcW4w_ToVc');
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
+function today(){return new Date().toISOString().split('T')[0]}
+function fmtDate(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`}
+function fmtMoney(v){return'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}
+function isOverdue(d){return d&&d<today()}
+function showToast(msg,t='err'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+t;setTimeout(()=>el.className='toast',3000)}
+function showLoader(on){document.getElementById('loader-wrap').style.display=on?'flex':'none'}
+
+const AVATAR_COLORS=['#4f46e5','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6'];
+function avatarColor(n){let h=0;for(let c of(n||'x'))h=(h+c.charCodeAt(0))%AVATAR_COLORS.length;return AVATAR_COLORS[h]}
+function getInitials(n){const p=(n||'?').trim().split(' ');return(p[0][0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase()}
+
+// ── READ ID FROM URL ──
+const urlId=new URLSearchParams(window.location.search).get('id');
+if(!urlId){window.location.href='concierge.html'}
+
+let CLIENT=null, pagamentos=[], tarefas=[], lembretes=[], interacoes=[];
+let pgtChart=null;
+
+// ── LOAD ALL ──
+async function loadAll(){
+  showLoader(true);
+  const[c,p,t,l,i]=await Promise.all([
+    _sb.from('concierge_clientes').select('id,data').eq('id',urlId).single(),
+    _sb.from('concierge_pagamentos').select('id,data').filter('data->>clienteId','eq',urlId).order('created_at'),
+    _sb.from('concierge_tarefas').select('id,data').filter('data->>clienteId','eq',urlId).order('created_at'),
+    _sb.from('concierge_lembretes').select('id,data').filter('data->>clienteId','eq',urlId).order('created_at'),
+    _sb.from('concierge_interacoes').select('id,data').filter('data->>clienteId','eq',urlId).order('created_at',{ascending:false}),
+  ]);
+  if(c.error||!c.data){showToast('Cliente não encontrado');showLoader(false);return}
+  CLIENT={id:c.data.id,...c.data.data};
+  pagamentos=(p.data||[]).map(r=>({id:r.id,...r.data}));
+  tarefas=(t.data||[]).map(r=>({id:r.id,...r.data}));
+  lembretes=(l.data||[]).map(r=>({id:r.id,...r.data}));
+  interacoes=(i.data||[]).map(r=>({id:r.id,...r.data}));
+  renderAll();
+  showLoader(false);
+}
+
+function renderAll(){
+  renderHero();renderInfo();renderPagamentos();renderTarefas();renderLembretes();renderInteracoes();renderFuturos();
+}
+
+// ── HERO ──
+function renderHero(){
+  const c=CLIENT;
+  const color=avatarColor(c.nome);
+  document.title=`${c.nome} — Soma Partners`;
+  document.getElementById('nav-breadcrumb').textContent=`Concierge / ${c.nome}`;
+  document.getElementById('hero-avatar').textContent=getInitials(c.nome);
+  document.getElementById('hero-avatar').style.background=color;
+  document.getElementById('hero-name').textContent=c.nome;
+  if(c.foto)document.getElementById('hero-bg').style.background=`url('${c.foto}') center/cover no-repeat`;
+  else document.getElementById('hero-bg').style.background=`linear-gradient(135deg,${color}33 0%,transparent 100%)`;
+  let sub='';
+  if(c.email)sub+=`<span><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>${c.email}</span>`;
+  if(c.telefone)sub+=`<span><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.34 12"/></svg>${c.telefone}</span>`;
+  if(c.patrimonio)sub+=`<span><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>${c.patrimonio}</span>`;
+  document.getElementById('hero-sub').innerHTML=sub;
+  document.getElementById('hero-badge').innerHTML=`<span class="hero-badge hb-${c.status||'ativo'}">${c.status==='inativo'?'Inativo':'Ativo'}</span>`;
+}
+
+// ── INFO GRID ──
+function renderInfo(){
+  const c=CLIENT;
+  document.getElementById('info-grid').innerHTML=`
+    <div class="info-item"><label>CPF / CNPJ</label><p${!c.cpf?' class="empty"':''}>${c.cpf||'Não informado'}</p></div>
+    <div class="info-item"><label>Data de nascimento</label><p${!c.nascimento?' class="empty"':''}>${c.nascimento?fmtDate(c.nascimento):'Não informado'}</p></div>
+    <div class="info-item"><label>Endereço</label><p${!c.endereco?' class="empty"':''}>${c.endereco||'Não informado'}</p></div>
+    <div class="info-item"><label>Patrimônio estimado</label><p${!c.patrimonio?' class="empty"':''}>${c.patrimonio||'Não informado'}</p></div>
+    ${c.obs?`<div class="info-item" style="grid-column:1/-1"><label>Observações</label><p>${c.obs}</p></div>`:''}`;
+  const members=[];
+  if(c.conjuge)members.push({nome:c.conjuge,rel:'Cônjuge'});
+  if(c.filhos)c.filhos.split(',').forEach(f=>{if(f.trim())members.push({nome:f.trim(),rel:'Filho(a)'})});
+  if(members.length>0){
+    document.getElementById('family-divider').style.display='block';
+    document.getElementById('family-members').innerHTML=members.map(m=>{
+      const col=avatarColor(m.nome);
+      return`<div class="family-member"><div class="fm-avatar" style="background:${col}">${getInitials(m.nome)}</div><div><div class="fm-name">${m.nome}</div><div class="fm-rel">${m.rel}</div></div></div>`;
+    }).join('');
+  }
+}
+
+// ── PAGAMENTOS ──
+function renderPagamentos(){
+  const pg=pagamentos;
+  const pago=pg.filter(p=>p.status==='pago').length;
+  const pend=pg.filter(p=>p.status==='pendente').length;
+  const atras=pg.filter(p=>p.status==='atrasado').length;
+  // Chart
+  const ctx=document.getElementById('pgt-chart').getContext('2d');
+  if(pgtChart)pgtChart.destroy();
+  if(pg.length>0){
+    pgtChart=new Chart(ctx,{type:'doughnut',data:{labels:['Pago','Pendente','Atrasado'],
+      datasets:[{data:[pago,pend,atras],backgroundColor:['#10b981','#f59e0b','#ef4444'],borderColor:'transparent',borderWidth:0}]},
+      options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:600}}});
+    document.getElementById('chart-legend').innerHTML=`
+      <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span><span class="legend-label">Pago</span><span class="legend-val">${pago}</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span><span class="legend-label">Pendente</span><span class="legend-val">${pend}</span></div>
+      <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span><span class="legend-label">Atrasado</span><span class="legend-val">${atras}</span></div>`;
+  }else{
+    document.getElementById('chart-legend').innerHTML='<div class="empty-msg">Sem pagamentos</div>';
+  }
+  // List
+  document.getElementById('pgt-list').innerHTML=pg.length===0?'<div class="empty-msg">Nenhum pagamento cadastrado</div>':
+    pg.sort((a,b)=>a.dataVencimento?.localeCompare(b.dataVencimento)).map(p=>`
+      <div class="pgt-item">
+        <span class="badge b-${p.status}">${p.status}</span>
+        <span class="pgt-desc">${p.descricao}</span>
+        <span class="pgt-date">${fmtDate(p.dataVencimento)}</span>
+        <span class="pgt-val">${fmtMoney(p.valor)}</span>
+        <button onclick="deletePgto('${p.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:0 4px;transition:color 0.2s" onmouseover="this.style.color='#fca5a5'" onmouseout="this.style.color='var(--muted)'">×</button>
+      </div>`).join('');
+}
+
+// ── TAREFAS ──
+function renderTarefas(){
+  const t=tarefas.filter(t=>t.status!=='concluida');
+  document.getElementById('task-list').innerHTML=t.length===0?'<div class="empty-msg">Nenhuma tarefa em aberto</div>':
+    t.sort((a,b)=>{const p={alta:0,media:1,baixa:2};return(p[a.prioridade]||1)-(p[b.prioridade]||1)}).map(t=>`
+      <div class="task-item">
+        <div class="task-check" onclick="concluirTarefa('${t.id}')"></div>
+        <span class="task-title">${t.titulo}</span>
+        ${t.prazo?`<span style="font-size:10px;color:${isOverdue(t.prazo)?'#fca5a5':'var(--muted)'}">${fmtDate(t.prazo)}</span>`:''}
+        <span class="prio prio-${t.prioridade||'media'}">${t.prioridade||'média'}</span>
+      </div>`).join('');
+}
+
+// ── LEMBRETES ──
+function renderLembretes(){
+  const l=lembretes.filter(x=>!x.feito).sort((a,b)=>a.data?.localeCompare(b.data));
+  const icons={alta:`<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+    media:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    baixa:`<svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`};
+  document.getElementById('lem-list').innerHTML=l.length===0?'<div class="empty-msg">Nenhum lembrete ativo</div>':
+    l.map(lem=>`
+      <div class="lem-item">
+        <div class="lem-icon li-${lem.prioridade||'media'}">${icons[lem.prioridade||'media']}</div>
+        <div style="flex:1"><div class="lem-title">${lem.titulo}</div>
+          <div class="lem-date ${isOverdue(lem.data)?'lem-overdue':''}">${fmtDate(lem.data)}${isOverdue(lem.data)?' — VENCIDO':''}</div>
+          ${lem.obs?`<div style="font-size:10px;color:var(--muted);margin-top:2px">${lem.obs}</div>`:''}
+        </div>
+        <button onclick="marcarLembrete('${lem.id}')" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:10px;font-weight:700;color:#6ee7b7;font-family:'Montserrat',sans-serif">✓</button>
+      </div>`).join('');
+}
+
+// ── INTERAÇÕES ──
+const tipoIcon={
+  ligacao:`<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.34 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.08 1h3a2 2 0 0 1 2 1.72"/></svg>`,
+  reuniao:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>`,
+  email:`<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
+  whatsapp:`<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  outro:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+};
+const tipoLabel={ligacao:'Ligação',reuniao:'Reunião',email:'E-mail',whatsapp:'WhatsApp',outro:'Contato'};
+const tipoClass={ligacao:'tld-ligacao',reuniao:'tld-reuniao',email:'tld-email',whatsapp:'tld-reuniao',outro:'tld-outro'};
+
+function renderInteracoes(){
+  const past=interacoes.filter(i=>i.data<=today());
+  document.getElementById('timeline-past').innerHTML=past.length===0?'<div class="empty-msg">Nenhuma interação registrada</div>':
+    past.map(i=>`<div class="tl-item">
+      <div class="tl-dot ${tipoClass[i.tipo]||'tld-outro'}">${tipoIcon[i.tipo]||tipoIcon.outro}</div>
+      <div class="tl-content">
+        <div class="tl-header"><span class="tl-action">${tipoLabel[i.tipo]||'Contato'}</span><span class="tl-date">${fmtDate(i.data)}</span>
+          <button onclick="deleteInteracao('${i.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted2);font-size:12px;margin-left:auto">×</button>
+        </div>
+        <div class="tl-desc">${i.desc||''}</div>
+        ${i.resolucao?`<div class="tl-res">→ ${i.resolucao}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function renderFuturos(){
+  const tasks=tarefas.filter(t=>t.prazo&&t.prazo>today()&&t.status!=='concluida').sort((a,b)=>a.prazo.localeCompare(b.prazo));
+  const lems=lembretes.filter(l=>!l.feito&&l.data>today()).sort((a,b)=>a.data.localeCompare(b.data));
+  const all=[
+    ...tasks.map(t=>({tipo:'tarefa',titulo:t.titulo,data:t.prazo,id:t.id})),
+    ...lems.map(l=>({tipo:'lembrete',titulo:l.titulo,data:l.data,id:l.id}))
+  ].sort((a,b)=>a.data.localeCompare(b.data));
+  document.getElementById('futuros-list').innerHTML=all.length===0?'<div class="empty-msg">Nenhuma ação futura programada</div>':
+    all.map(a=>`<div class="lem-item">
+      <div class="lem-icon li-media">${a.tipo==='tarefa'?
+        `<svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`:
+        `<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`}
+      </div>
+      <div><div class="lem-title">${a.titulo}</div><div class="lem-date">${fmtDate(a.data)}</div></div>
+      <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,0.07);color:var(--muted);margin-left:auto">${a.tipo==='tarefa'?'Tarefa':'Lembrete'}</span>
+    </div>`).join('');
+}
+
+// ── CRUD ──
+async function saveCliente(){
+  const nome=document.getElementById('e-nome').value.trim();if(!nome){alert('Informe o nome');return}
+  Object.assign(CLIENT,{nome,email:document.getElementById('e-email').value.trim(),
+    telefone:document.getElementById('e-telefone').value.trim(),cpf:document.getElementById('e-cpf').value.trim(),
+    nascimento:document.getElementById('e-nasc').value,status:document.getElementById('e-status').value,
+    foto:document.getElementById('e-foto').value.trim(),endereco:document.getElementById('e-end').value.trim(),
+    conjuge:document.getElementById('e-conjuge').value.trim(),filhos:document.getElementById('e-filhos').value.trim(),
+    patrimonio:document.getElementById('e-patrimonio').value.trim(),obs:document.getElementById('e-obs').value.trim()});
+  const{error}=await _sb.from('concierge_clientes').upsert({id:CLIENT.id,data:CLIENT});
+  if(error){showToast('Erro ao salvar');return}
+  showToast('Salvo!','ok');closeModal('modal-cliente');renderAll();
+}
+
+async function savePgto(){
+  const desc=document.getElementById('pgto-desc').value.trim(),val=document.getElementById('pgto-val').value,venc=document.getElementById('pgto-vencimento-date')||document.getElementById('pgto-venc').value;
+  if(!desc||!val){alert('Preencha os campos obrigatórios');return}
+  const id=document.getElementById('pgto-id').value||uid();
+  const rec={id,clienteId:urlId,descricao:desc,valor:parseFloat(val),dataVencimento:document.getElementById('pgto-venc').value,status:document.getElementById('pgto-status').value,obs:document.getElementById('pgto-obs').value.trim()};
+  const{error}=await _sb.from('concierge_pagamentos').upsert({id,data:rec});
+  if(error){showToast('Erro ao salvar');return}
+  const idx=pagamentos.findIndex(p=>p.id===id);
+  if(idx>=0)pagamentos[idx]=rec;else pagamentos.push(rec);
+  showToast('Salvo!','ok');closeModal('modal-pgto');renderPagamentos();
+}
+
+async function saveTarefa(){
+  const titulo=document.getElementById('tar-titulo').value.trim();if(!titulo){alert('Informe o título');return}
+  const id=document.getElementById('tar-id').value||uid();
+  const rec={id,clienteId:urlId,titulo,prioridade:document.getElementById('tar-prio').value,prazo:document.getElementById('tar-prazo').value,responsavel:document.getElementById('tar-resp').value.trim(),status:'aberta'};
+  const{error}=await _sb.from('concierge_tarefas').upsert({id,data:rec});
+  if(error){showToast('Erro ao salvar');return}
+  const idx=tarefas.findIndex(t=>t.id===id);
+  if(idx>=0)tarefas[idx]=rec;else tarefas.push(rec);
+  showToast('Salvo!','ok');closeModal('modal-tarefa');renderTarefas();renderFuturos();
+}
+
+async function concluirTarefa(id){
+  const t=tarefas.find(x=>x.id===id);if(!t)return;
+  t.status='concluida';
+  await _sb.from('concierge_tarefas').upsert({id,data:t});
+  renderTarefas();renderFuturos();
+}
+
+async function saveLembrete(){
+  const titulo=document.getElementById('lem-titulo').value.trim(),data=document.getElementById('lem-data').value;
+  if(!titulo||!data){alert('Preencha título e data');return}
+  const id=uid();
+  const rec={id,clienteId:urlId,titulo,data,prioridade:document.getElementById('lem-prio').value,obs:document.getElementById('lem-obs').value.trim(),feito:false};
+  const{error}=await _sb.from('concierge_lembretes').upsert({id,data:rec});
+  if(error){showToast('Erro ao salvar');return}
+  lembretes.push(rec);showToast('Salvo!','ok');closeModal('modal-lembrete');renderLembretes();renderFuturos();
+}
+
+async function marcarLembrete(id){
+  const l=lembretes.find(x=>x.id===id);if(!l)return;
+  l.feito=true;await _sb.from('concierge_lembretes').upsert({id,data:l});
+  renderLembretes();renderFuturos();
+}
+
+async function saveInteracao(){
+  const desc=document.getElementById('int-desc').value.trim(),data=document.getElementById('int-data').value;
+  if(!desc||!data){alert('Preencha os campos obrigatórios');return}
+  const id=uid();
+  const rec={id,clienteId:urlId,tipo:document.getElementById('int-tipo').value,data,desc,resolucao:document.getElementById('int-res').value.trim()};
+  const{error}=await _sb.from('concierge_interacoes').upsert({id,data:rec});
+  if(error){showToast('Erro ao salvar');return}
+  interacoes.unshift(rec);showToast('Registrado!','ok');closeModal('modal-interacao');renderInteracoes();
+}
+
+async function deletePgto(id){
+  await _sb.from('concierge_pagamentos').delete().eq('id',id);
+  pagamentos=pagamentos.filter(p=>p.id!==id);renderPagamentos();
+}
+
+async function deleteInteracao(id){
+  await _sb.from('concierge_interacoes').delete().eq('id',id);
+  interacoes=interacoes.filter(i=>i.id!==id);renderInteracoes();
+}
+
+function confirmDelete(){openModal('modal-confirm')}
+async function doDelete(){
+  await Promise.all([
+    _sb.from('concierge_clientes').delete().eq('id',urlId),
+    _sb.from('concierge_pagamentos').delete().filter('data->>clienteId','eq',urlId),
+    _sb.from('concierge_tarefas').delete().filter('data->>clienteId','eq',urlId),
+    _sb.from('concierge_lembretes').delete().filter('data->>clienteId','eq',urlId),
+    _sb.from('concierge_interacoes').delete().filter('data->>clienteId','eq',urlId),
+  ]);
+  window.location.href='concierge.html';
+}
+
+// ── MODALS ──
+function openModal(id){
+  if(id==='modal-cliente'&&CLIENT){
+    ['e-nome','e-email','e-telefone','e-cpf','e-end','e-conjuge','e-filhos','e-patrimonio','e-obs','e-foto'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('e-nome').value=CLIENT.nome||'';
+    document.getElementById('e-email').value=CLIENT.email||'';
+    document.getElementById('e-telefone').value=CLIENT.telefone||'';
+    document.getElementById('e-cpf').value=CLIENT.cpf||'';
+    document.getElementById('e-nasc').value=CLIENT.nascimento||'';
+    document.getElementById('e-status').value=CLIENT.status||'ativo';
+    document.getElementById('e-foto').value=CLIENT.foto||'';
+    document.getElementById('e-end').value=CLIENT.endereco||'';
+    document.getElementById('e-conjuge').value=CLIENT.conjuge||'';
+    document.getElementById('e-filhos').value=CLIENT.filhos||'';
+    document.getElementById('e-patrimonio').value=CLIENT.patrimonio||'';
+    document.getElementById('e-obs').value=CLIENT.obs||'';
+  }
+  if(id==='modal-pgto'){document.getElementById('pgto-id').value='';document.getElementById('mt-pgto').textContent='Novo Pagamento';['pgto-desc','pgto-val','pgto-obs'].forEach(f=>document.getElementById(f).value='');document.getElementById('pgto-venc').value=today();document.getElementById('pgto-status').value='pendente'}
+  if(id==='modal-tarefa'){document.getElementById('tar-id').value='';document.getElementById('mt-tarefa').textContent='Nova Tarefa';['tar-titulo','tar-prazo','tar-resp'].forEach(f=>document.getElementById(f).value='');document.getElementById('tar-prio').value='media'}
+  if(id==='modal-lembrete'){['lem-titulo','lem-obs'].forEach(f=>document.getElementById(f).value='');document.getElementById('lem-data').value=today();document.getElementById('lem-prio').value='media'}
+  if(id==='modal-interacao'){['int-desc','int-res'].forEach(f=>document.getElementById(f).value='');document.getElementById('int-data').value=today();document.getElementById('int-tipo').value='ligacao'}
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
+function editCliente(){openModal('modal-cliente')}
+
+loadAll();
+</script>
+</body>
+</html>
