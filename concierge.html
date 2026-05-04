@@ -209,6 +209,15 @@ textarea.form-control{resize:vertical;min-height:80px}
 /* ── DIVIDER ── */
 .type-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:#f1f5f9;color:var(--text-secondary)}
 
+
+/* ── TOAST / LOADER ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;font-family:'Montserrat',sans-serif;opacity:0;transition:all 0.3s;z-index:9999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:#7f1d1d}.toast.ok{background:#065f46}
+.loader-wrap{position:fixed;inset:0;background:rgba(255,255,255,0.6);display:none;align-items:center;justify-content:center;z-index:5000}
+.loader-spin{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
@@ -892,7 +901,7 @@ function renderClientes(){
   document.getElementById('clientes-count').textContent=`${list.length} cliente${list.length!==1?'s':''}`;
 }
 function filterClientes(){renderClientes()}
-async function saveCliente(){
+async async function saveCliente(){
   const nome=document.getElementById('c-nome').value.trim();
   if(!nome){alert('Informe o nome do cliente');return}
   const id=document.getElementById('cliente-edit-id').value||uid();
@@ -941,7 +950,7 @@ function renderPagamentos(){
   document.getElementById('pagamentos-count').textContent=`${list.length} registro${list.length!==1?'s':''}`;
 }
 function filterPagamentos(){renderPagamentos()}
-async function savePagamento(){
+async async function savePagamento(){
   const clienteId=document.getElementById('pgt-cliente').value;
   const desc=document.getElementById('pgt-desc').value.trim();
   const valor=document.getElementById('pgt-valor').value;
@@ -992,7 +1001,7 @@ function renderTarefas(){
   document.getElementById('tarefas-count').textContent=`${list.length} tarefa${list.length!==1?'s':''}`;
 }
 function filterTarefas(){renderTarefas()}
-async function saveTarefa(){
+async async function saveTarefa(){
   const titulo=document.getElementById('tar-titulo').value.trim();
   if(!titulo){alert('Informe o título da tarefa');return}
   const id=document.getElementById('tar-edit-id').value||uid();
@@ -1034,7 +1043,7 @@ function renderDocumentos(){
     </div>`).join('');
 }
 function filterDocumentos(){renderDocumentos()}
-async function saveDocumento(){
+async async function saveDocumento(){
   const clienteId=document.getElementById('doc-cliente').value;
   const nome=document.getElementById('doc-nome').value.trim();
   if(!nome){alert('Informe o nome do documento');return}
@@ -1072,7 +1081,7 @@ function renderHistorico(){
       </div>
     </div>`).join('');
 }
-async function saveInteracao(){
+async async function saveInteracao(){
   const clienteId=document.getElementById('int-cliente').value;
   const desc=document.getElementById('int-desc').value.trim();
   const data=document.getElementById('int-data').value;
@@ -1128,7 +1137,7 @@ function renderLembretes(){
     }).join('');
   }
 }
-async function saveLembrete(){
+async async function saveLembrete(){
   const titulo=document.getElementById('lem-titulo').value.trim();
   const data=document.getElementById('lem-data').value;
   if(!titulo||!data){alert('Preencha título e data');return}
@@ -1186,5 +1195,7 @@ function exportData(){
 // INIT
 initDB();
 </script>
+<div id="toast" class="toast"></div>
+<div id="loader-wrap" class="loader-wrap"><div class="loader-spin"></div></div>
 </body>
 </html>
