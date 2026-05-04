@@ -407,8 +407,20 @@ textarea.form-control{resize:vertical;min-height:80px}
             <option value="perdido">Perdido</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Data da próxima ação</label><input type="date" class="form-control" id="l-data-acao"></div>
+        <div class="form-group"><label class="form-label">Data do primeiro contato</label><input type="date" class="form-control" id="l-data-acao" oninput="sugerirProximoContato()"></div>
       </div>
+
+      <!-- SUGESTÃO INTELIGENTE -->
+      <div id="sugestao-box" style="display:none;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:10px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#4f46e5;margin-bottom:8px">Sugestão de prospecção</div>
+        <div id="sugestao-abordagem" style="font-size:13px;color:#1e293b;line-height:1.6;margin-bottom:10px"></div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="font-size:12px;font-weight:600;color:#475569">Próximo contato sugerido:</div>
+          <span id="sugestao-data" style="background:#4f46e5;color:#fff;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700"></span>
+          <button type="button" onclick="aplicarSugestao()" style="background:none;border:1px solid #4f46e5;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:#4f46e5;cursor:pointer;font-family:'Montserrat',sans-serif">Aplicar</button>
+        </div>
+      </div>
+
       <div class="form-group"><label class="form-label">Próxima ação</label><input class="form-control" id="l-proxima-acao" placeholder="Ex: Ligar para agendar reunião"></div>
       <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="l-obs" rows="3" placeholder="Notas adicionais sobre o lead..."></textarea></div>
     </div>
@@ -782,8 +794,9 @@ async function saveLead(){
     responsavel:document.getElementById('l-responsavel').value.trim(),
     temperatura:document.getElementById('l-temperatura').value,
     estagio:document.getElementById('l-estagio').value,
+    data_primeiro_contato:document.getElementById('l-data-acao').value,
     proxima_acao:document.getElementById('l-proxima-acao').value.trim(),
-    data_proxima_acao:document.getElementById('l-data-acao').value,
+    data_proxima_acao:document.getElementById('l-data-acao').dataset.proximaData || document.getElementById('l-data-acao').value,
     obs:document.getElementById('l-obs').value.trim(),
   };
   if(!await dbUpsert('wealth_leads',data))return;
@@ -894,6 +907,70 @@ function openModal(id){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')})});
+
+// ════ SUGESTÃO INTELIGENTE DE PROSPECÇÃO ════
+const SUGESTOES = {
+  frio: {
+    dias: 30,
+    abordagem: `<strong>Lead Frio</strong> — Abordagem de nutrição gradual.<br>
+Envie conteúdo de valor antes do contato direto: um artigo sobre planejamento patrimonial, panorama de mercado ou convite para um evento da Soma Partners. O objetivo é gerar familiaridade antes de solicitar atenção.`,
+    proximaAcao: 'Enviar conteúdo relevante por WhatsApp ou e-mail'
+  },
+  morno: {
+    dias: 15,
+    abordagem: `<strong>Lead Morno</strong> — Abordagem de relacionamento ativo.<br>
+Agende um contato direto: ligação de 10 minutos para entender melhor o momento do cliente, ou convite personalizado para um almoço ou evento exclusivo. Mostre que a Soma conhece o perfil dele.`,
+    proximaAcao: 'Ligar para agendar reunião ou convidar para evento'
+  },
+  quente: {
+    dias: 7,
+    abordagem: `<strong>Lead Quente</strong> — Abordagem de fechamento acelerado.<br>
+Prioridade máxima. Entre em contato em até 48h com uma proposta personalizada ou diagnóstico inicial. O cliente está receptivo — qualquer atraso pode resultar em perda para o concorrente.`,
+    proximaAcao: 'Apresentar diagnóstico inicial ou proposta personalizada'
+  }
+};
+
+let _sugestaoData = null;
+
+function sugerirProximoContato(){
+  const temp = document.getElementById('l-temperatura').value;
+  const dataContato = document.getElementById('l-data-acao').value;
+  if(!dataContato) { document.getElementById('sugestao-box').style.display='none'; return; }
+
+  const sug = SUGESTOES[temp];
+  if(!sug) return;
+
+  // Calcula próxima data
+  const base = new Date(dataContato + 'T12:00:00');
+  base.setDate(base.getDate() + sug.dias);
+  _sugestaoData = base.toISOString().split('T')[0];
+
+  const [y,m,d] = _sugestaoData.split('-');
+  document.getElementById('sugestao-abordagem').innerHTML = sug.abordagem;
+  document.getElementById('sugestao-data').textContent = `${d}/${m}/${y} (+${sug.dias} dias)`;
+  document.getElementById('sugestao-box').style.display = 'block';
+
+  // Pré-preenche próxima ação se vazio
+  const pa = document.getElementById('l-proxima-acao');
+  if(!pa.value) pa.value = sug.proximaAcao;
+}
+
+function aplicarSugestao(){
+  // Salva a data sugerida como próxima ação em campo oculto / usa o mesmo campo
+  if(_sugestaoData){
+    // Armazena no dataset do input para uso no saveLead
+    document.getElementById('l-data-acao').dataset.proximaData = _sugestaoData;
+    const [y,m,d] = _sugestaoData.split('-');
+    document.getElementById('sugestao-data').textContent = `✓ ${d}/${m}/${y} aplicado`;
+    document.getElementById('sugestao-data').style.background = '#10b981';
+  }
+}
+
+// Dispara sugestão também quando temperatura muda
+document.addEventListener('DOMContentLoaded', () => {
+  const tempSel = document.getElementById('l-temperatura');
+  if(tempSel) tempSel.addEventListener('change', sugerirProximoContato);
+});
 
 // INIT
 initDB();
