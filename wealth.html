@@ -388,15 +388,16 @@ textarea.form-control{resize:vertical;min-height:80px}
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Responsável</label><input class="form-control" id="l-responsavel" placeholder="Nome do responsável"></div>
+        <div class="form-group"><label class="form-label">Idade</label><input type="number" class="form-control" id="l-idade" placeholder="Ex: 45" min="18" max="100" oninput="sugerirPlano()"></div>
+      </div>
+      <div class="form-row">
         <div class="form-group"><label class="form-label">Temperatura</label>
-          <select class="form-control" id="l-temperatura">
+          <select class="form-control" id="l-temperatura" onchange="sugerirPlano()">
             <option value="frio">Frio</option>
             <option value="morno">Morno</option>
             <option value="quente">Quente</option>
           </select>
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-group"><label class="form-label">Estágio</label>
           <select class="form-control" id="l-estagio">
             <option value="prospeccao">Prospecção</option>
@@ -407,21 +408,24 @@ textarea.form-control{resize:vertical;min-height:80px}
             <option value="perdido">Perdido</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">Data do primeiro contato</label><input type="date" class="form-control" id="l-data-acao" oninput="sugerirProximoContato()"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Data do primeiro contato</label><input type="date" class="form-control" id="l-data-acao" oninput="sugerirPlano()"></div>
+        <div class="form-group"><label class="form-label">Próxima ação</label><input class="form-control" id="l-proxima-acao" placeholder="Preenchido automaticamente"></div>
       </div>
 
-      <!-- SUGESTÃO INTELIGENTE -->
-      <div id="sugestao-box" style="display:none;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:10px;padding:14px 16px;margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#4f46e5;margin-bottom:8px">Sugestão de prospecção</div>
-        <div id="sugestao-abordagem" style="font-size:13px;color:#1e293b;line-height:1.6;margin-bottom:10px"></div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="font-size:12px;font-weight:600;color:#475569">Próximo contato sugerido:</div>
-          <span id="sugestao-data" style="background:#4f46e5;color:#fff;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700"></span>
-          <button type="button" onclick="aplicarSugestao()" style="background:none;border:1px solid #4f46e5;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:#4f46e5;cursor:pointer;font-family:'Montserrat',sans-serif">Aplicar</button>
+      <!-- PLANO DE PROSPECÇÃO -->
+      <div id="sugestao-box" style="display:none;background:#f0f4ff;border:1px solid #c7d2fe;border-radius:12px;padding:16px 18px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#4f46e5">Plano de Prospecção</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="sugestao-data" style="background:#4f46e5;color:#fff;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700"></span>
+            <button type="button" onclick="aplicarSugestao()" style="background:#4f46e5;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif">Aplicar data</button>
+          </div>
         </div>
+        <div id="sugestao-perfil" style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px"></div>
+        <div id="sugestao-abordagem" style="font-size:13px;color:#1e293b;line-height:1.8"></div>
       </div>
-
-      <div class="form-group"><label class="form-label">Próxima ação</label><input class="form-control" id="l-proxima-acao" placeholder="Ex: Ligar para agendar reunião"></div>
       <div class="form-group"><label class="form-label">Observações</label><textarea class="form-control" id="l-obs" rows="3" placeholder="Notas adicionais sobre o lead..."></textarea></div>
     </div>
     <div class="modal-footer">
@@ -794,6 +798,7 @@ async function saveLead(){
     responsavel:document.getElementById('l-responsavel').value.trim(),
     temperatura:document.getElementById('l-temperatura').value,
     estagio:document.getElementById('l-estagio').value,
+    idade:parseInt(document.getElementById('l-idade').value)||null,
     data_primeiro_contato:document.getElementById('l-data-acao').value,
     proxima_acao:document.getElementById('l-proxima-acao').value.trim(),
     data_proxima_acao:document.getElementById('l-data-acao').dataset.proximaData || document.getElementById('l-data-acao').value,
@@ -813,13 +818,15 @@ function editLead(id){
   document.getElementById('l-patrimonio').value=l.patrimonio_estimado||'';
   document.getElementById('l-origem').value=l.origem||'indicacao';
   document.getElementById('l-responsavel').value=l.responsavel||'';
+  document.getElementById('l-idade').value=l.idade||'';
   document.getElementById('l-temperatura').value=l.temperatura||'frio';
   document.getElementById('l-estagio').value=l.estagio||'prospeccao';
   document.getElementById('l-proxima-acao').value=l.proxima_acao||'';
-  document.getElementById('l-data-acao').value=l.data_proxima_acao||'';
+  document.getElementById('l-data-acao').value=l.data_primeiro_contato||l.data_proxima_acao||'';
   document.getElementById('l-obs').value=l.obs||'';
   document.getElementById('modal-lead-title').textContent='Editar Lead';
   openModal('modal-lead');
+  sugerirPlano();
 }
 
 function confirmDeleteLead(id){
@@ -898,88 +905,145 @@ function openModal(id){
   if(id==='modal-lead'){
     document.getElementById('lead-edit-id').value='';
     document.getElementById('modal-lead-title').textContent='Novo Lead';
-    ['l-nome','l-telefone','l-patrimonio','l-responsavel','l-proxima-acao','l-data-acao','l-obs'].forEach(f=>document.getElementById(f).value='');
+    ['l-nome','l-telefone','l-patrimonio','l-responsavel','l-idade','l-proxima-acao','l-data-acao','l-obs'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('l-origem').value='indicacao';
     document.getElementById('l-temperatura').value='frio';
     document.getElementById('l-estagio').value='prospeccao';
+    document.getElementById('sugestao-box').style.display='none';
+    delete document.getElementById('l-data-acao').dataset.proximaData;
   }
   document.getElementById(id).classList.add('open');
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')})});
 
-// ════ SUGESTÃO INTELIGENTE DE PROSPECÇÃO ════
-const SUGESTOES = {
-  frio: {
-    dias: 30,
-    abordagem: `<strong>Lead Frio — Cadência de nutrição (30 dias)</strong><br><br>
-<strong>Semana 1:</strong> Envie um conteúdo de valor personalizado via WhatsApp ou e-mail — panorama de mercado, artigo sobre proteção patrimonial ou oportunidade de investimento relevante ao perfil. Sem pitch comercial.<br><br>
-<strong>Semana 2:</strong> Conecte no LinkedIn com mensagem personalizada citando algo específico do perfil dele. Curta ou comente uma publicação recente para gerar presença.<br><br>
-<strong>Semana 3:</strong> Envie convite para o próximo evento exclusivo da Soma Partners com contexto claro do benefício para ele.<br><br>
-<strong>Semana 4:</strong> Ligação de aquecimento de 5 minutos — não venda, apenas valide se recebeu os materiais e pergunte sobre o momento atual de investimento. O objetivo é abrir a porta para a qualificação.`,
-    proximaAcao: 'Enviar conteúdo de valor personalizado (sem pitch comercial)'
-  },
-  morno: {
-    dias: 15,
-    abordagem: `<strong>Lead Morno — Cadência de qualificação (15 dias)</strong><br><br>
-<strong>Dias 1–3:</strong> Ligação de qualificação de 10 minutos. Roteiro: entender o momento atual ("Você está revisando sua estratégia de investimentos este ano?"), patrimônio aproximado e objetivos de curto prazo. Não apresente soluções — apenas escute e registre.<br><br>
-<strong>Dias 4–7:</strong> Envie material exclusivo da Soma Partners alinhado ao que foi levantado na ligação — demonstra que você ouviu. Inclua convite para reunião de diagnóstico gratuita.<br><br>
-<strong>Dias 8–12:</strong> Follow-up direto para confirmar reunião de diagnóstico. Se não houver resposta, tente por canal alternativo (WhatsApp / e-mail).<br><br>
-<strong>Dias 13–15:</strong> Reunião de diagnóstico. Apresente o modelo Soma, identifique gaps na carteira atual e proponha próximos passos concretos.`,
-    proximaAcao: 'Realizar ligação de qualificação de 10 minutos'
-  },
-  quente: {
-    dias: 7,
-    abordagem: `<strong>Lead Quente — Cadência de fechamento (7 dias)</strong><br><br>
-<strong>Dia 1 (hoje):</strong> Contato imediato — ligação ou WhatsApp. Este lead não pode esperar. Confirme o interesse, entenda a urgência e defina data para reunião de diagnóstico nos próximos 2 dias.<br><br>
-<strong>Dias 2–3:</strong> Reunião de diagnóstico presencial ou por vídeo. Apresente o modelo Soma, mapeie toda a carteira atual e identifique ineficiências claras. Saia da reunião com uma necessidade específica mapeada.<br><br>
-<strong>Dias 4–5:</strong> Envio de proposta personalizada com estimativa de ganho/proteção para o patrimônio dele. Proposta deve ser objetiva, com 2 opções no máximo.<br><br>
-<strong>Dias 6–7:</strong> Follow-up de fechamento. Se houver objeção, trate-a diretamente na ligação. Não deixe passar 48h sem resposta — este é o momento de decisão.`,
-    proximaAcao: 'Ligar hoje para agendar reunião de diagnóstico'
-  }
-};
-
+// ════ PLANO DE PROSPECÇÃO INTELIGENTE ════
 let _sugestaoData = null;
 
-function sugerirProximoContato(){
+function getPerfil(idade){
+  if(!idade) return null;
+  if(idade < 35) return {label:'Acumulador Jovem', desc:'Foco em construção de patrimônio de longo prazo, tolerância a risco mais alta, forte presença digital. Prefere comunicação rápida e objetiva.'};
+  if(idade < 50) return {label:'Crescimento & Proteção', desc:'Equilíbrio entre crescimento e segurança. Preocupação com família, negócios e diversificação. Receptivo a planejamento global.'};
+  if(idade < 65) return {label:'Pré-sucessório', desc:'Preservação e eficiência tributária em foco. Interesse em sucessão, previdência e proteção patrimonial. Decisões mais ponderadas e relacionais.'};
+  return {label:'Legado & Sucessão', desc:'Prioridade em preservação, planejamento sucessório e doações. Prefere encontros presenciais e relacionamento de confiança consolidado.'};
+}
+
+function getOrigem(origem){
+  const map = {
+    indicacao:        {bonus:'Lead por indicação — o grau de confiança já está parcialmente construído. Use o nome de quem indicou para personalizar o primeiro contato.'},
+    evento:           {bonus:'Lead captado em evento Soma — já demonstrou interesse direto. Reforce a experiência vivida no evento como ponto de partida da conversa.'},
+    redes_sociais:    {bonus:'Lead via redes sociais — mais receptivo a comunicação digital. Priorize WhatsApp e conteúdo visual antes de partir para ligação.'},
+    prospecção_ativa: {bonus:'Lead de prospecção ativa — contato a frio. Mais cuidado na abordagem inicial; entregue valor antes de qualquer solicitação de atenção.'},
+    outro:            {bonus:''}
+  };
+  return map[origem] || {bonus:''};
+}
+
+function buildPlano(temp, idade, origem, dataContato){
+  const perfil = getPerfil(idade);
+  const origInfo = getOrigem(origem);
+
+  const planos = {
+    frio: {
+      dias: 30,
+      titulo: 'Cadência de Nutrição — 30 dias',
+      passos: [
+        {periodo:'Semana 1', acao:'Envie conteúdo de valor personalizado via WhatsApp ou e-mail: panorama de mercado, artigo sobre proteção patrimonial ou convite para evento exclusivo. Zero pitch comercial — o objetivo é gerar familiaridade.'},
+        {periodo:'Semana 2', acao:'Conecte no LinkedIn com mensagem personalizada citando algo específico do perfil. Curta ou comente uma publicação recente para gerar presença passiva.'},
+        {periodo:'Semana 3', acao:'Envie convite nominativo para o próximo evento Soma Partners, reforçando o benefício específico para o perfil dele.'},
+        {periodo:'Semana 4', acao:'Ligação de aquecimento de 5 minutos — não venda. Pergunte sobre o momento atual de investimento e se os materiais foram úteis. Objetivo: abrir porta para qualificação.'},
+      ],
+      proximaAcao: 'Enviar conteúdo personalizado de valor (sem pitch comercial)'
+    },
+    morno: {
+      dias: 15,
+      titulo: 'Cadência de Qualificação — 15 dias',
+      passos: [
+        {periodo:'Dias 1–3', acao:'Ligação de qualificação de 10 minutos. Roteiro: "Você está revisando sua estratégia de investimentos este ano?" — entenda patrimônio aproximado e objetivos. Escute, não venda.'},
+        {periodo:'Dias 4–7', acao:'Envie material Soma alinhado ao que foi levantado na ligação. Demonstra atenção e prepara o terreno para o diagnóstico.'},
+        {periodo:'Dias 8–12', acao:'Follow-up para confirmar reunião de diagnóstico. Se não houver resposta em 48h, tente canal alternativo (WhatsApp ↔ e-mail).'},
+        {periodo:'Dias 13–15', acao:'Reunião de diagnóstico. Apresente o modelo Soma, mapeie gaps da carteira atual e saia com próximos passos concretos definidos.'},
+      ],
+      proximaAcao: 'Realizar ligação de qualificação de 10 minutos'
+    },
+    quente: {
+      dias: 7,
+      titulo: 'Cadência de Fechamento — 7 dias',
+      passos: [
+        {periodo:'Dia 1 (hoje)', acao:'Contato imediato — ligação ou WhatsApp. Confirme interesse, entenda a urgência e defina data para reunião de diagnóstico nos próximos 2 dias. Este lead não pode esperar.'},
+        {periodo:'Dias 2–3', acao:'Reunião de diagnóstico presencial ou por vídeo. Mapeie a carteira atual, identifique ineficiências claras e saia com uma necessidade específica mapeada.'},
+        {periodo:'Dias 4–5', acao:'Envio de proposta personalizada com estimativa de ganho/proteção. Máximo 2 opções — objetividade fecha negócio, complexidade afasta.'},
+        {periodo:'Dias 6–7', acao:'Follow-up de fechamento. Trate objeções diretamente na ligação. Não deixe passar 48h sem resposta — este é o momento de decisão.'},
+      ],
+      proximaAcao: 'Ligar hoje para agendar reunião de diagnóstico'
+    }
+  };
+
+  // Ajustes por perfil de idade
+  const plano = {...planos[temp]};
+  if(perfil){
+    if(perfil.label === 'Acumulador Jovem'){
+      plano.passos = plano.passos.map(p=>({...p, acao: p.acao.replace('ligação','mensagem no WhatsApp').replace('Ligação','Mensagem no WhatsApp')}));
+    }
+    if(perfil.label === 'Pré-sucessório' || perfil.label === 'Legado & Sucessão'){
+      plano.passos = plano.passos.map((p,i)=>i===0?{...p,acao:p.acao+' Prefira abordagem presencial ou telefônica a canais digitais.'}:p);
+    }
+  }
+
+  return {plano, perfil, origInfo};
+}
+
+function sugerirPlano(){
   const temp = document.getElementById('l-temperatura').value;
   const dataContato = document.getElementById('l-data-acao').value;
-  if(!dataContato) { document.getElementById('sugestao-box').style.display='none'; return; }
+  const idade = parseInt(document.getElementById('l-idade').value) || null;
+  const origem = document.getElementById('l-origem').value;
 
-  const sug = SUGESTOES[temp];
-  if(!sug) return;
+  if(!dataContato){ document.getElementById('sugestao-box').style.display='none'; return; }
+
+  const {plano, perfil, origInfo} = buildPlano(temp, idade, origem, dataContato);
 
   // Calcula próxima data
   const base = new Date(dataContato + 'T12:00:00');
-  base.setDate(base.getDate() + sug.dias);
+  base.setDate(base.getDate() + plano.dias);
   _sugestaoData = base.toISOString().split('T')[0];
-
   const [y,m,d] = _sugestaoData.split('-');
-  document.getElementById('sugestao-abordagem').innerHTML = sug.abordagem;
-  document.getElementById('sugestao-data').textContent = `${d}/${m}/${y} (+${sug.dias} dias)`;
+
+  // Monta perfil label
+  let perfilHtml = '';
+  if(perfil) perfilHtml += `<span style="background:#e0f2fe;color:#0369a1;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;margin-right:6px">${perfil.label}</span>`;
+  perfilHtml += `<span style="background:${temp==='quente'?'#fee2e2':temp==='morno'?'#fef3c7':'#dbeafe'};color:${temp==='quente'?'#991b1b':temp==='morno'?'#92400e':'#1e40af'};border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700">${temp.charAt(0).toUpperCase()+temp.slice(1)}</span>`;
+  document.getElementById('sugestao-perfil').innerHTML = perfilHtml;
+
+  // Monta plano HTML
+  let html = `<strong>${plano.titulo}</strong>`;
+  if(perfil) html += `<div style="font-size:12px;color:#475569;margin:6px 0 10px;line-height:1.5">${perfil.desc}</div>`;
+  if(origInfo.bonus) html += `<div style="font-size:12px;color:#4f46e5;background:#eef2ff;border-radius:6px;padding:7px 10px;margin-bottom:10px">${origInfo.bonus}</div>`;
+  html += '<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">';
+  plano.passos.forEach(p=>{
+    html += `<div style="display:flex;gap:10px;align-items:flex-start">
+      <span style="flex-shrink:0;font-size:10px;font-weight:700;background:#e0e7ff;color:#3730a3;border-radius:4px;padding:2px 7px;margin-top:1px;white-space:nowrap">${p.periodo}</span>
+      <span style="font-size:12px;color:#334155;line-height:1.6">${p.acao}</span>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('sugestao-abordagem').innerHTML = html;
+  document.getElementById('sugestao-data').textContent = `Próximo contato: ${d}/${m}/${y}`;
   document.getElementById('sugestao-box').style.display = 'block';
 
   // Pré-preenche próxima ação se vazio
   const pa = document.getElementById('l-proxima-acao');
-  if(!pa.value) pa.value = sug.proximaAcao;
+  if(!pa.value) pa.value = plano.proximaAcao;
 }
 
 function aplicarSugestao(){
-  // Salva a data sugerida como próxima ação em campo oculto / usa o mesmo campo
   if(_sugestaoData){
-    // Armazena no dataset do input para uso no saveLead
     document.getElementById('l-data-acao').dataset.proximaData = _sugestaoData;
     const [y,m,d] = _sugestaoData.split('-');
-    document.getElementById('sugestao-data').textContent = `✓ ${d}/${m}/${y} aplicado`;
+    document.getElementById('sugestao-data').textContent = `Aplicado: ${d}/${m}/${y}`;
     document.getElementById('sugestao-data').style.background = '#10b981';
   }
 }
-
-// Dispara sugestão também quando temperatura muda
-document.addEventListener('DOMContentLoaded', () => {
-  const tempSel = document.getElementById('l-temperatura');
-  if(tempSel) tempSel.addEventListener('change', sugerirProximoContato);
-});
 
 // INIT
 initDB();
